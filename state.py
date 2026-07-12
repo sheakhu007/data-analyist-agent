@@ -9,3 +9,5 @@ class AgentState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     trace: list[str]
     plan: list[str]
+    last_error: str | None
+    retry_count: int

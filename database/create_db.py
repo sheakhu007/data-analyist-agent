@@ -41,7 +41,9 @@ cursor.executemany(
     "INSERT INTO sales VALUES (?, ?, ?)",
     rows
 )
+cursor.execute("PRAGMA table_info(sales)")
 
+print(cursor.fetchall())
 conn.commit()
 conn.close()
 

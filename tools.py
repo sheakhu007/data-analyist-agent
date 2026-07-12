@@ -34,17 +34,51 @@ def joke_generator() -> str:
 @tool
 def run_sql(query: str) -> str:
     """
-    Execute SQL against the sales database.
+    Execute a SQLite query against the sales database.
+
+    Only call this tool after generating a valid SQLite query.
     """
 
     conn = sqlite3.connect("database/sales.db")
 
     cursor = conn.cursor()
 
-    cursor.execute(query)
+    try:
+        cursor.execute(query)
+
+    except Exception as e:
+        return f"ERROR: {str(e)}"
 
     rows = cursor.fetchall()
 
     conn.close()
 
     return str(rows)
+
+@tool
+def get_schema() -> str:
+    """
+    Return the schema of the SQLite database.
+
+    Use this tool before generating SQL whenever you are unsure
+    about table names or column names.
+    """
+
+    conn = sqlite3.connect("database/sales.db")
+
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(sales)")
+
+    schema = cursor.fetchall()
+
+    conn.close()
+
+    return str(schema)
+
+TOOLS = [
+    get_schema,
+    run_sql,
+    calculator,
+    joke_generator
+]

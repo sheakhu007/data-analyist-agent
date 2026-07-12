@@ -1,10 +1,28 @@
+from langchain_core.messages import SystemMessage
+
+
+SYSTEM_PROMPT = """
+You are an AI Planner.
+
+Your job is NOT to answer the question.
+
+Break the user's request into small executable steps.
+
+Return only numbered steps.
+"""
+
 from typing import List
 
-def create_plan(user_query: str) -> List[str]:
-    return [
-        "Understand user request",
-        "Generate SQL",
-        "Execute SQL",
-        "Analyze results",
-        "Generate final response"
+from llm import llm
+
+
+def create_plan(question: str):
+
+    messages = [
+        SystemMessage(content=SYSTEM_PROMPT),
+        ("human", question),
     ]
+
+    response = llm.invoke(messages)
+
+    return response.content

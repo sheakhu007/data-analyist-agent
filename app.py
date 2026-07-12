@@ -5,7 +5,7 @@ result = graph.invoke(
     {
         "messages": [
             HumanMessage(
-                content="What is the sum of 25 and 12?"
+                content="Show  5 Point summary of sales and outlier in next responce"
             )
         ],
         "trace": []
@@ -17,6 +17,6 @@ print("\n===== AGENT TRACE =====")
 for step in result["trace"]:
     print(step)
 
-print("\n===== FINAL ANSWER =====")
 
+print("\n========== ANSWER ==========")
 print(result["messages"][-1].content)
