@@ -20,6 +20,8 @@ builder = StateGraph(AgentState)
 # Nodes
 # -----------------------------
 
+
+
 builder.add_node("planner", planner_node)
 
 builder.add_node("executor", executor)
@@ -34,6 +36,9 @@ builder.add_node("memory_update", memory_update_node)
 # -----------------------------
 # Start
 # -----------------------------
+
+builder.add_edge(START, "memory")
+builder.add_edge("memory", "planner")
 
 builder.add_edge(
     START,
