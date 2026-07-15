@@ -6,6 +6,8 @@ from nodes import (
     planner_node,
     executor,
     reflection_node,
+    memory_node,
+    memory_update_node,
 )
 
 from tools import TOOLS
@@ -26,7 +28,9 @@ builder.add_node("tool", ToolNode(TOOLS))
 
 builder.add_node("reflection", reflection_node)
 
+builder.add_node("memory", memory_node)
 
+builder.add_node("memory_update", memory_update_node)
 # -----------------------------
 # Start
 # -----------------------------
@@ -72,8 +76,11 @@ builder.add_conditional_edges(
     route_reflection,
     {
         "executor": "executor",
+        "memory_update": "memory_update",
         "end": END,
     },
 )
+
+builder.add_edge("memory_update", END)
 
 graph = builder.compile(name="DataAnalystAgent")

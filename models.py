@@ -5,5 +5,12 @@ from pydantic.dataclasses import dataclass
 class ToolResult:
     tool: str
     status: str
-    result: dict | None
-    message: str | None
+    result: dict | None = None
+    message: str | None = None
+    
+
+@dataclass
+class MemoryItem:
+    timestamp: str
+    category: str
+    content: str

@@ -3,6 +3,7 @@ from typing_extensions import TypedDict
 
 from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
+from models import ToolResult
 
 
 class AgentState(TypedDict):
@@ -21,9 +22,11 @@ class AgentState(TypedDict):
     completed_tasks: list[str]
 
     # Tool outputs
-    tool_results: list[dict]
+    tool_results: list[ToolResult]
 
     # Reflection
     last_error: str | None
 
     retry_count: int
+
+    memory: list[str]

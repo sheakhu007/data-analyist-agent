@@ -8,8 +8,8 @@ def route_reflection(state):
 
     latest = state["tool_results"][-1]
 
-    if latest["status"] == "success":
-        return "executor"
+    if latest.status == "success":
+        return "memory_update"
 
     if state.get("retry_count", 0) >= MAX_RETRIES:
         return "end"

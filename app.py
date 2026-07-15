@@ -1,27 +1,18 @@
 from langchain_core.messages import HumanMessage
 from graph import graph
-from pprint import pprint
+from console_output import print_json
 
 result = graph.invoke(
     {
         "messages": [
-            HumanMessage(content="Show top 5 customers by sales and generate a chart.")
+            HumanMessage(content=" Trends over time (sales, profit, quantity, discounts) and line charts."),
         ],
         "trace": [],
     },
     config={"recursion_limit": 100},
 )
 
-print("\n===== TOOL RESULTS =====")
-
-for item in result.get("tool_results", []):
-    pprint(item)
-
-print("\n===== AGENT TRACE =====")
-
-for step in result["trace"]:
-    pprint(step)
-
-
+print_json("TOOL RESULTS", result.get("tool_results", []))
+print_json("AGENT TRACE", result.get("trace", []))
 print("\n========== ANSWER ==========")
 print(result["messages"][-1].content)

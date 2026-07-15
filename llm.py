@@ -2,20 +2,22 @@ from langchain_groq import ChatGroq
 from groq import BadRequestError
 from tools import TOOLS
 from config import GROQ_API_KEY
+from console_output import print_json
 
 llm = ChatGroq(
     model=
     # ==========================================
     # 🌟 TOP-TIER REASONING & LARGE PRODUCTION MODELS
+    
     # ==========================================
     "openai/gpt-oss-120b",  # Highest rated overall, heavy reasoning + built-in search/code execution
-    # "llama-3.3-70b-versatile",       # Best balanced open-weight production model (high capacity, multi-tool use)
-    # "deepseek-r1-distill-llama-70b", # Exceptional specialized model for advanced logic, math, and coding tasks
+    #"llama-3.3-70b-versatile",       # Best balanced open-weight production model (high capacity, multi-tool use)
+    #"deepseek-r1-distill-llama-70b", # Exceptional specialized model for advanced logic, math, and coding tasks
     # # ==========================================
     # # ⚡ AGENTIC & COMPOUND SYSTEMS
     # # ==========================================
-    # "groq/compound",                 # Fully managed agentic system with native tool orchestration
-    # "groq/compound-mini",            # Lightweight, ultra-fast agentic system for multi-turn task workflows
+    #"groq/compound",                 # Fully managed agentic system with native tool orchestration
+    #"groq/compound-mini",            # Lightweight, ultra-fast agentic system for multi-turn task workflows
     # # ==========================================
     # # 🚀 NEXT-GEN PREVIEW & MID-TIER REASONING
     # # ==========================================
@@ -32,7 +34,7 @@ llm = ChatGroq(
     # # ==========================================
     # # 🎙️ AUDIO SPEECH-TO-TEXT MODELS
     # # ==========================================
-    # "whisper-large-v3",              # Gold standard high-fidelity audio transcription
+    #"whisper-large-v3",              # Gold standard high-fidelity audio transcription
     # "whisper-large-v3-turbo"         # Maximum speed optimized audio transcription,
     api_key=GROQ_API_KEY,
     temperature=0.5,
@@ -49,17 +51,23 @@ def safe_invoke(model, messages):
         return model.invoke(messages)
 
     except BadRequestError as e:
-        print(f"⚠️ Tool call generation failed: {e}")
+        print_json("LLM ERROR", {"type": "BadRequestError", "message": str(e)})
 
         # Retry once
         try:
             return model.invoke(messages)
         except BadRequestError as retry_error:
-            print(f"❌ Retry failed: {retry_error}")
+            print_json(
+                "LLM ERROR",
+                {"type": "BadRequestError", "message": str(retry_error), "retry": 1},
+            )
             raise
 
     except Exception as e:
-        print(f"❌ Unexpected LLM error: {e}")
+        print_json(
+            "LLM ERROR",
+            {"type": type(e).__name__, "message": str(e)},
+        )
         raise
 
 

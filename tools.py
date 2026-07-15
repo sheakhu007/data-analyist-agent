@@ -1,4 +1,5 @@
 from langchain_core.tools import tool
+from console_output import pretty_json, print_json
 import sqlite3
 import json
 import pandas as pd
@@ -29,7 +30,7 @@ DB_PATH = Path(__file__).resolve().parent / "database" / "sales.db"
 
 
 def get_schema_text():
-    conn = sqlite3.connect("database/sales.db")
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(sales)")
     cols = cursor.fetchall()
@@ -118,15 +119,15 @@ def run_sql(query: str) -> str:
         }
     """
 
-    print("➡️ run_sql")
-
     query = query.strip()
+
+    print_json("RUN SQL", {"query": query})
 
     query_upper = query.upper()
 
     # Only allow read-only queries
     if not (query_upper.startswith("SELECT") or query_upper.startswith("WITH")):
-        return json.dumps(
+        return pretty_json(
             {
                 "status": "error",
                 "tool": "run_sql",
@@ -151,7 +152,7 @@ def run_sql(query: str) -> str:
 
     for keyword in blocked_keywords:
         if keyword in query_upper:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "run_sql",
@@ -172,10 +173,9 @@ def run_sql(query: str) -> str:
 
         rows = [dict(row) for row in cursor.fetchall()]
 
-        print("✅ SQL executed successfully")
-        print(f"Rows fetched: {len(rows)}")
+        print_json("SQL RESULT", {"status": "success", "row_count": len(rows)})
 
-        return json.dumps(
+        return pretty_json(
             {
                 "status": "success",
                 "tool": "run_sql",
@@ -187,7 +187,7 @@ def run_sql(query: str) -> str:
 
     except sqlite3.Error as e:
 
-        return json.dumps(
+        return pretty_json(
             {
                 "status": "error",
                 "tool": "run_sql",
@@ -199,7 +199,7 @@ def run_sql(query: str) -> str:
 
     except Exception as e:
 
-        return json.dumps(
+        return pretty_json(
             {
                 "status": "error",
                 "tool": "run_sql",
@@ -220,7 +220,7 @@ def get_schema() -> str:
     """
     Return the database schema.
     """
-    print("➡️ get_schema")
+    print_json("GET SCHEMA", {"database": str(DB_PATH)})
     return get_schema_text()
 
 
@@ -294,7 +294,7 @@ def generate_chart(
         rows = json.loads(data)
 
         if not isinstance(rows, list):
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -303,7 +303,7 @@ def generate_chart(
             )
 
         if not rows:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -312,7 +312,7 @@ def generate_chart(
             )
 
         if not all(isinstance(row, dict) for row in rows):
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -323,7 +323,7 @@ def generate_chart(
         df = pd.DataFrame(rows)
 
         if df.empty:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -335,7 +335,7 @@ def generate_chart(
         numeric_columns = df.select_dtypes(include=["number"]).columns.tolist()
 
         if not text_columns:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -344,7 +344,7 @@ def generate_chart(
             )
 
         if not numeric_columns:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -358,7 +358,7 @@ def generate_chart(
         df = df.dropna(subset=[x_column, y_column])
 
         if df.empty:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -376,7 +376,7 @@ def generate_chart(
         }
 
         if chart_type not in valid_chart_types:
-            return json.dumps(
+            return pretty_json(
                 {
                     "status": "error",
                     "tool": "generate_chart",
@@ -416,7 +416,7 @@ def generate_chart(
 
         fig.savefig(chart_path, dpi=300, bbox_inches="tight")
 
-        return json.dumps(
+        return pretty_json(
             {
                 "status": "success",
                 "tool": "generate_chart",
@@ -427,7 +427,7 @@ def generate_chart(
         )
 
     except Exception as e:
-        return json.dumps(
+        return pretty_json(
             {
                 "status": "error",
                 "tool": "generate_chart",
