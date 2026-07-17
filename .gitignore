@@ -1,8 +1,17 @@
 __pycache__/
 .pytest_cache/
+.coverage
+*.py,cover
 .cache/
 .venv/
 .env
 agent.py
 practice.py
-charts/
+charts
+task-notes.md
+htmlcov/
+
+
+
+
+python -c "import os, zipfile; zipf = zipfile.ZipFile('output.zip', 'w', zipfile.ZIP_DEFLATED); [zipf.write(os.path.join(r, f), os.path.relpath(os.path.join(r, f), 'agentic-ai')) for r, d, fs in os.walk('agentic-ai') for f in fs if not f.startswith('.') and not any(p.startswith('.') for p in os.path.relpath(r, 'agentic-ai').split(os.sep))]; zipf.close()"
