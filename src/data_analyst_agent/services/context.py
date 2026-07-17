@@ -1,9 +1,18 @@
+from langchain_core.messages import HumanMessage
+
 from ..tools import TOOLS, get_schema_text
 from ..utils.console import pretty_json
 
-def build_context(state):
 
-    question = state["messages"][0].content
+def build_context(state):
+    question = next(
+        (
+            message.content
+            for message in reversed(state["messages"])
+            if isinstance(message, HumanMessage)
+        ),
+        "",
+    )
     plan = state.get("plan")
     if plan:
         plan_text = "\n".join(
