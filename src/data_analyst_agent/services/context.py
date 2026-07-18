@@ -165,3 +165,82 @@ Error:
             sections.append(section)
 
     return "\n\n".join(sections)
+
+
+
+
+def build_repair_context(state) -> str:
+    """
+    Build a dedicated context for repairing a failed execution plan.
+    """
+
+    plan = state.get("plan")
+
+    if plan:
+        plan_text = "\n".join(
+            f"{idx + 1}. {step}"
+            for idx, step in enumerate(plan.steps)
+        )
+    else:
+        plan_text = "No execution plan available."
+
+    tool_results = state.get("tool_results", [])
+
+    latest_result = tool_results[-1] if tool_results else None
+
+    latest_error = latest_result.message if latest_result else "Unknown"
+
+    latest_tool = latest_result.tool if latest_result else "Unknown"
+
+    schema = get_schema_text()
+
+    tool_names = "\n".join(
+        f"- {tool.name}"
+        for tool in TOOLS
+        if tool.name != "get_schema"
+    )
+
+    return f"""
+You are repairing an execution plan.
+
+Do NOT create a completely new strategy.
+
+Only modify the part of the plan that caused the failure.
+
+Original Plan
+
+Goal:
+{plan.goal if plan else "Unknown"}
+
+Steps
+
+{plan_text}
+
+Failed Tool
+
+{latest_tool}
+
+Failure
+
+{latest_error}
+
+Retry Attempt
+
+{state.get("repair_attempts",0)}
+
+Available Tools
+
+{tool_names}
+
+Database Schema
+
+{schema}
+
+Instructions
+
+1. Preserve successful work.
+2. Do not restart the workflow.
+3. Fix only the failed step.
+4. Prefer minimal changes.
+5. Return a corrected execution plan.
+"""
