@@ -1,11 +1,11 @@
-from datetime import datetime
-from enum import Enum
+import datetime
 from typing import Optional
-
-from pydantic import BaseModel, Field
+from uuid import uuid4
 from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field
+from enum import Enum
 
-from .enums import ErrorCategory, ExecutionStatus
+from .enums import ExecutionStatus, ErrorCategory
 
 @dataclass
 class ToolResult:
@@ -64,11 +64,6 @@ class RepairDecision(BaseModel):
         description="Human-readable explanation of the failure."
     )
 
-    repair_instruction: str = Field(
-        default="",
-        description="Guidance for the compatibility repair workflow."
-    )
-
     failed_tool: Optional[str] = Field(
         default=None,
         description="Name of the tool that failed."
@@ -78,6 +73,11 @@ class RepairDecision(BaseModel):
         default=0,
         ge=0,
         description="Current repair attempt count."
+    )
+
+    repair_instruction: str | None = Field(
+        default=None,
+        description="Guidance supplied to the repair workflow.",
     )
 
     class Config:
@@ -94,4 +94,32 @@ class RepairRecord(BaseModel):
 
     repaired_plan: Plan
 
-    timestamp: datetime
+    timestamp: datetime.datetime
+
+
+class ExecutionRecord(BaseModel):
+
+    step_number: int
+
+    tool_name: str
+
+    tool_input: dict
+
+    tool_output: str
+
+    success: bool
+
+    started_at: datetime.datetime
+
+    completed_at: datetime.datetime
+
+
+
+
+
+class MemoryItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    content: str
+    category: str
+    importance: float
+    timestamp: datetime.datetime

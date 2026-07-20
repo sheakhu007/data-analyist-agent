@@ -46,43 +46,22 @@ def build_context(state):
 
     sections.append(
         f"""
-You are an expert SQLite Data Analyst.
+You are a SQLite data analyst. Use only table `sales` and the schema below;
+write SQLite SELECT queries only. Give final answers as prose or a Markdown
+table, never raw JSON.
 
-Database Schema:
+SQLite date rule: never use `EXTRACT`. Use `strftime('%Y', order_date)`,
+`strftime('%m', order_date)`, or `strftime('%Y-%m', order_date)`.
 
-{schema}
+Schema: {schema}
+Tools: {tool_names}
+Plan: {plan_text}
+Question: {question}
 
-Available Tools:
-
-{tool_names}
-
-Execution Plan:
-
-{plan_text}
-
-User Question:
-
-{question}
-
-Rules:
-- Only use the table 'sales'
-- Never invent table names
-- Never invent columns
-- Only generate SQLite SQL.
-- Always present final results as a natural-language summary or markdown table, never raw JSON.
-- Generate charts using 'generate_chart' if the user requests a chart.
-- The chart must be saved in the 'charts' directory and the path included in the final answer.
-- To prepare a chart, first query a compact dataset with exactly two aliases:
-  `label` (text) and `value` (numeric). For example, use
-  `strftime('%Y-%m', order_date) AS label, SUM(sales) AS value`.
-- Call `generate_chart` only after that SQL result is available. Its `data`
-  argument must be an array of {{"label": "...", "value": number}} objects.
-
-Tool Usage Rules:
-1. Call ONLY ONE tool at a time.
-2. Wait for the tool result before deciding the next tool.
-3. Never call multiple dependent tools in one response.
-4. Think → Tool → Observe → Think Again.
+For a requested chart: query `label` (text) and `value` (number), then call
+`generate_chart` using exactly the returned values; include its path in the
+answer. Complete one measure at a time and never invent chart data.
+Call exactly one tool, wait for its result, then follow the current plan step.
 """
     )
 
