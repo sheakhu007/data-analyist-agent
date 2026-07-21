@@ -5,7 +5,7 @@ from dataclasses import replace
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 
-from ...core.llm import llm_with_required_tool, llm_with_tools, safe_invoke
+from ...core.llm import llm, llm_with_required_tool, llm_with_tools, safe_invoke
 from ...domain.models import ToolResult
 from ...services.context import build_context
 from ..state import AgentState
@@ -99,6 +99,9 @@ def executor(state: AgentState) -> dict:
             "plan": plan,
         }
     )
+    # Approximate count is deliberately dependency-free; it makes prompt growth
+    # visible in the execution trace without sending more data to the model.
+    trace.append(f"📏 Context size: ~{len(context) // 4} tokens")
 
     question = next(
         (
@@ -112,7 +115,15 @@ def executor(state: AgentState) -> dict:
     # ``context`` already contains the user question and compact execution
     # history. Re-sending every prior AI/tool message duplicates SQL rows and
     # can exceed smaller models' request-token limits.
-    model = llm_with_required_tool if _plan_requires_another_tool(plan) else llm_with_tools
+    # The final plan step is an answer, not another tool action.  Keeping tools
+    # bound here lets the model keep issuing successful calls forever, which
+    # causes the executor → tool → reflection cycle to hit LangGraph's limit.
+    if _plan_requires_another_tool(plan):
+        model = llm_with_required_tool
+    elif plan and plan.steps:
+        model = llm
+    else:
+        model = llm_with_tools
     response = safe_invoke(
         model,
         [

@@ -4,13 +4,7 @@ from ..tools import TOOLS
 from .config import GROQ_API_KEY
 from ..utils.console import print_json
 
-MODEL_NAME = "openai/gpt-oss-120b"
-# The 8B model has a tight 6k TPM allowance. Larger models need enough room
-# to serialize a realistic SQL tool call without being truncated mid-JSON.
-MAX_TOKENS = 256 if MODEL_NAME == "llama-3.1-8b-instant" else 1024
-
-llm = ChatGroq(
-    model=MODEL_NAME,
+MODEL_NAME = [
     # ==========================================
     # 🌟 TOP-TIER REASONING & LARGE PRODUCTION MODELS
     
@@ -34,13 +28,21 @@ llm = ChatGroq(
     # # ==========================================
     # # 🏃 LIGHTWEIGHT, FAST & UTILITY MODELS
     # # ==========================================
-    #"llama-3.1-8b-instant",          # The go-to lightweight model for high-throughput, low-latency text tasks
+    "llama-3.1-8b-instant",          # The go-to lightweight model for high-throughput, low-latency text tasks
     # "openai/gpt-oss-safeguard-20b",  # Specialized model strictly tuned for content moderation and safety
     # # ==========================================
     # # 🎙️ AUDIO SPEECH-TO-TEXT MODELS
     # # ==========================================
     #"whisper-large-v3",              # Gold standard high-fidelity audio transcription
     # "whisper-large-v3-turbo"         # Maximum speed optimized audio transcription,
+    ]
+    # The 8B model has a tight 6k TPM allowance. Larger models need enough room
+    # to serialize a realistic SQL tool call without being truncated mid-JSON.
+MODEL_NAME = MODEL_NAME[0]
+MAX_TOKENS = 256 if MODEL_NAME == "llama-3.1-8b-instant" else 1024
+
+llm = ChatGroq(
+    model=MODEL_NAME,
     api_key=GROQ_API_KEY,
     temperature=0,
     max_tokens=MAX_TOKENS,

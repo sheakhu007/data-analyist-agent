@@ -1,19 +1,35 @@
-from langchain_core.messages import HumanMessage
-
 from ..tools import TOOLS, get_schema_text
 from ..utils.console import pretty_json
 
 
-def build_context(state):
-    question = next(
-        (
-            message.content
-            for message in reversed(state["messages"])
-            if isinstance(message, HumanMessage)
-        ),
-        "",
-    )
+# Tool output is part of the next model request.  Keep that request bounded:
+# SQL queries can otherwise return thousands of rows and every executor loop
+# would include all of them again.
+MAX_CONTEXT_TOOL_RESULTS = 3
+MAX_CONTEXT_ROWS_PER_RESULT = 20
+MAX_CONTEXT_VALUE_CHARS = 8_000
 
+
+def _compact_tool_result(result: dict) -> str:
+    """Format a useful, bounded representation of a tool result for the LLM."""
+    compact = dict(result)
+    rows = compact.get("rows")
+
+    if isinstance(rows, list) and len(rows) > MAX_CONTEXT_ROWS_PER_RESULT:
+        compact["rows"] = rows[:MAX_CONTEXT_ROWS_PER_RESULT]
+        compact["rows_truncated"] = len(rows) - MAX_CONTEXT_ROWS_PER_RESULT
+
+    value = pretty_json(compact)
+    if len(value) > MAX_CONTEXT_VALUE_CHARS:
+        omitted = len(value) - MAX_CONTEXT_VALUE_CHARS
+        value = (
+            f"{value[:MAX_CONTEXT_VALUE_CHARS]}\n"
+            f"... output truncated ({omitted} characters omitted)"
+        )
+    return value
+
+
+def build_context(state):
     plan = state.get("plan")
 
     if plan:
@@ -29,6 +45,13 @@ def build_context(state):
         )
     else:
         plan_text = "No plan created yet."
+
+    final_step = bool(plan and plan.steps and plan.current_step >= len(plan.steps) - 1)
+    next_action = (
+        "Use the execution history to answer the user now. Do not call a tool."
+        if final_step
+        else "Call exactly one tool, wait for its result, then follow the current plan step."
+    )
 
     schema = get_schema_text()
 
@@ -56,12 +79,11 @@ SQLite date rule: never use `EXTRACT`. Use `strftime('%Y', order_date)`,
 Schema: {schema}
 Tools: {tool_names}
 Plan: {plan_text}
-Question: {question}
 
 For a requested chart: query `label` (text) and `value` (number), then call
 `generate_chart` using exactly the returned values; include its path in the
 answer. Complete one measure at a time and never invent chart data.
-Call exactly one tool, wait for its result, then follow the current plan step.
+{next_action}
 """
     )
 
@@ -120,7 +142,13 @@ Repair Rules:
 
         sections.append("Execution History:")
 
-        for tool in tool_results:
+        omitted_results = len(tool_results) - MAX_CONTEXT_TOOL_RESULTS
+        if omitted_results > 0:
+            sections.append(
+                f"- {omitted_results} older tool result(s) omitted to keep the request small."
+            )
+
+        for tool in tool_results[-MAX_CONTEXT_TOOL_RESULTS:]:
 
             section = f"""
 Tool   : {tool.tool}
@@ -131,7 +159,7 @@ Status : {tool.status}
                 section += f"""
 
 Result:
-{pretty_json(tool.result)}
+{_compact_tool_result(tool.result)}
 """
 
             if tool.message:
